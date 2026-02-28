@@ -1,0 +1,21 @@
+from flask import Flask, request, render_template
+import requests
+import json
+
+app = Flask(__name__)
+
+def clean_domain(domain):
+    domain = domain.strip().lower()
+    domain = domain.replace("http://", "").replace("https://", "")
+    domain = domain.split("/")[0]
+    re
+def get_subdomains(domain):
+    url = f"https://crt.sh/?q=%25.{domain}&output=json"
+    haders = {"User-Agent": "Mzilla/5.0"}
+
+    try:
+        responseet(url, headers=eaders, timeout=20)
+        data = json.loads(respo   subdomans = set()
+
+        for entry in data:
+            name_value = entr.get

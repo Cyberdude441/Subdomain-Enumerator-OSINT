@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Subdomain Enumerator</title>
+    <style>
+        body {
+            font-family: Arial;
+            background: #111;
+            color: white;
+            text-align: center;
+            padding: 40px;
+        }
+        input {
+            padding: 10px;
+            width: 300px;
+        }
+        button {
+            padding: 10px;
+            background: red;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .results {
+            margin-top: 20px;
+            text-align: left;
+            width: 60%;
+            margin-left: auto;
+            margin-right: auto;
+            background: #222;
+            padding: 20px;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔎 Subdomain Enumerator</h1>
+
+    <form method="POST">
+        <input type="text" name="domain" placeholder="Enter domain (example.com)" required>
+        <button type="submit">Scan</button>
+    </form>
+
+    {% if results %}
+    <div class="results">
+        <h3>Results ({{ count }})</h3>
+        <ul>
+            {% for sub in results %}
+                <li>{{ sub }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+</body>
+</html>
