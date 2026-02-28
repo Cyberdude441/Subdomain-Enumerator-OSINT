@@ -1,67 +1,152 @@
-from flask import Flask, request, render_template
+from flask import Flask, render_template, request
 import requests
+import dns.resolver
+import socket
+import concurrent.futures
 
 app = Flask(__name__)
 
-def clean_domain(domain):
-    domain = domain.strip().lower()
-    domain = domain.replace("http://", "").replace("https://", "")
-    domain = domain.split("/")[0]
-    return domain
+COMMON_SUBS = [
+    "www","mail","dev","test","staging","api","vpn","portal",
+    "admin","beta","internal","secure","prod","uat","backup",
+    "shop","blog","m","mobile","cdn","static","support",
+    "dashboard","panel","gateway","auth","sso","cloud"
+]
 
-def get_subdomains(domain):
-    url = f"https://crt.sh/?q=%25.{domain}&output=json"
-    headers = {"User-Agent": "Mozilla/5.0"}
-
+# ----------------------------
+# CT LOG ENUMERATION
+# ----------------------------
+def ct_enum(domain):
+    found = set()
     try:
-        response = requests.get(url, headers=headers, timeout=30)
-
-        if response.status_code != 200:
-            print("Bad response:", response.status_code)
-            return []
-
-        data = response.json()
-
-        subdomains = set()
+        url = f"https://crt.sh/?q=%25.{domain}&output=json"
+        r = requests.get(url, timeout=20)
+        data = r.json()
 
         for entry in data:
-            name_value = entry.get("name_value", "")
+            names = entry.get("name_value", "").split("\n")
+            for name in names:
+                name = name.strip().lower()
+                if name.startswith("*."):
+                    name = name[2:]
+                if domain in name:
+                    found.add(name)
+    except:
+        pass
 
-            for sub in name_value.split("\n"):
-                sub = sub.strip().lower()
+    return found
 
-                if not sub:
-                    continue
 
-                if "*" in sub:
-                    continue
+# ----------------------------
+# DNS BRUTE FORCE
+# ----------------------------
+def dns_bruteforce(domain):
+    found = set()
+    resolver = dns.resolver.Resolver()
 
-                subdomains.add(sub)
+    def check(sub):
+        test_domain = f"{sub}.{domain}"
+        try:
+            resolver.resolve(test_domain, "A")
+            return test_domain
+        except:
+            return test_domain  # return even if no DNS
 
-        print("FLASK COUNT:", len(subdomains))  # Debug
+    with concurrent.futures.ThreadPoolExecutor(max_workers=30) as executor:
+        results = executor.map(check, COMMON_SUBS)
 
-        return sorted(subdomains)
+    for result in results:
+        found.add(result)
 
-    except Exception as e:
-        print("ERROR:", e)
-        return []
+    return found
 
-@app.route("/", methods=["GET", "POST"])
-def home():
+
+# ----------------------------
+# CLASSIFICATION
+# ----------------------------
+def classify_subdomain(sub):
+    status = "No DNS"
+    ip = "N/A"
+
+    # DNS check
+    try:
+        ip = socket.gethostbyname(sub)
+        status = "DNS Resolved"
+    except:
+        return {
+            "subdomain": sub,
+            "ip": ip,
+            "status": status
+        }
+
+    # HTTP check
+    try:
+        r = requests.get(f"http://{sub}", timeout=5)
+        return {
+            "subdomain": sub,
+            "ip": ip,
+            "status": f"HTTP {r.status_code}"
+        }
+    except:
+        pass
+
+    # HTTPS check
+    try:
+        r = requests.get(f"https://{sub}", timeout=5)
+        return {
+            "subdomain": sub,
+            "ip": ip,
+            "status": f"HTTPS {r.status_code}"
+        }
+    except:
+        pass
+
+    return {
+        "subdomain": sub,
+        "ip": ip,
+        "status": "Down / Blocked"
+    }
+
+
+# ----------------------------
+# MAIN ENUMERATION ENGINE
+# ----------------------------
+def enumerate_domain(domain):
+    all_subs = set()
+
+    # CT logs
+    all_subs.update(ct_enum(domain))
+
+    # DNS brute force
+    all_subs.update(dns_bruteforce(domain))
+
     results = []
-    count = 0
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=40) as executor:
+        classified = executor.map(classify_subdomain, all_subs)
+
+    for item in classified:
+        results.append(item)
+
+    return sorted(results, key=lambda x: x["subdomain"])
+
+
+# ----------------------------
+# FLASK ROUTE
+# ----------------------------
+@app.route("/", methods=["GET", "POST"])
+def index():
+    results = []
+    domain = ""
 
     if request.method == "POST":
         domain = request.form.get("domain")
+
         if domain:
-            domain = clean_domain(domain)
-            results = get_subdomains(domain)
-            count = len(results)
+            results = enumerate_domain(domain)
 
-    return render_template("index.html", results=results, count=count)
+    return render_template("index.html", results=results, domain=domain)
 
-import os
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+    app.run(host="0.0.0.0", port=5000, debug=True)
