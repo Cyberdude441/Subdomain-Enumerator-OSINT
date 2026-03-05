@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Subdomain Enumerator Documentation</title>
+<style>
+body{
+font-family:Arial, sans-serif;
+background:#f4f4f4;
+margin:40px;
+}
+h1,h2{
+color:#333;
+}
+code{
+background:#eee;
+padding:4px;
+}
+.container{
+background:white;
+padding:30px;
+border-radius:8px;
+box-shadow:0 0 10px rgba(0,0,0,0.1);
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+
+<h1>Subdomain Enumerator (OSINT Tool)</h1>
+
+<p>This tool discovers subdomains of a target domain using OSINT techniques such as Certificate Transparency logs and DNS enumeration.</p>
+
+<h2>Features</h2>
+<ul>
+<li>Certificate Transparency log enumeration</li>
+<li>DNS brute-force subdomain discovery</li>
+<li>HTTP/HTTPS service detection</li>
+<li>Multithreaded scanning</li>
+<li>Terminal-style output interface</li>
+</ul>
+
+<h2>Installation</h2>
+
+Clone the repository:
+
+<pre><code>
+git clone https://github.com/Cyberdude441/Subdomain-Enumerator-OSINT.git
+cd Subdomain-Enumerator-OSINT
+</code></pre>
+
+Create virtual environment:
+
+<pre><code>
+python3 -m venv venv
+source venv/bin/activate
+</code></pre>
+
+Install dependencies:
+
+<pre><code>
+pip install -r requirements.txt
+</code></pre>
+
+<h2>Usage</h2>
+
+Run the tool:
+
+<pre><code>
+python app.py
+</code></pre>
+
+Open browser:
+
+<pre><code>
+http://127.0.0.1:5000
+</code></pre>
+
+Enter a domain such as:
+
+<pre><code>
+tesla.com
+example.com
+google.com
+</code></pre>
+
+The tool will enumerate discovered subdomains and classify their status.
+
+<h2>Output Classification</h2>
+
+<ul>
+<li>HTTP Live</li>
+<li>HTTPS Live</li>
+<li>DNS Resolved</li>
+<li>Down / Blocked</li>
+<li>No DNS</li>
+</ul>
+
+<h2>Screenshots</h2>
+
+Add screenshots in the <b>screenshots</b> folder of the repository.
+
+<h2>Legal Disclaimer</h2>
+
+This tool is intended for educational purposes and authorized security testing only.
+
+Do not scan systems without permission.
+
+</div>
+</body>
+</html>
